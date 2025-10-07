@@ -1,6 +1,4 @@
 [core]
-    remote = mygdrive
-['remote "mygdrive"']
-    url = gdrive://173puguwiIl4PEjag3k9O1JIXAa4l2x8K
-    gdrive_service_account_json_file_path = ../gdrive-key.json
-    gdrive_use_service_account = true
+    remote = mys3
+['remote "mys3"']
+    url = s3://vietnamese-telecom-data

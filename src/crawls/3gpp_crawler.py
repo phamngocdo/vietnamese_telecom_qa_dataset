@@ -165,9 +165,6 @@ class ThreeGPPSpider(Spider):
         for file_link in file_links:
             file_name = os.path.basename(file_link).lower()
 
-            if any(skip in file_name for skip in ["cr", "history", "corrigendum", "lte", "geran", "ct"]):
-                continue
-
             if not any(ts.replace(".", "") in file_name for ts in IMPORTANT_TS):
                 continue
 
