@@ -1,10 +1,11 @@
 import os
 import json
 import fitz
+import pdfplumber
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-RAW_DATA_DIR = os.path.join(PROJECT_ROOT, "data/raw/vn_spec")
-PARSED_JSON_DIR = os.path.join(PROJECT_ROOT, "data/preprocessed/vn_spec")
+RAW_DATA_DIR = os.path.join(PROJECT_ROOT, "data/raw")
+PARSED_JSON_DIR = os.path.join(PROJECT_ROOT, "data/preprocessed/parsed")
 
 def ensure_dir_exists(path: str):
     os.makedirs(path, exist_ok=True)
@@ -17,41 +18,71 @@ def get_all_pdf_files(root_dir: str):
                 pdf_files.append(os.path.join(root, f))
     return pdf_files
 
-def parse_single_pdf_with_fitz(file_path: str) -> dict:
+def extract_tables(pdf_path: str):
+    all_tables = []
+    
+    try:
+        with fitz.open(pdf_path) as doc:
+            total_pages = doc.page_count
+    except Exception:
+        print(f"Failed to get page count for {os.path.basename(pdf_path)}. Skipping tables.")
+        return []
+
+    for page_index in range(total_pages):
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                page = pdf.pages[page_index]
+                tables_on_page = page.extract_tables()
+                
+                for table_index, table in enumerate(tables_on_page):
+                    if table:
+                        all_tables.append({
+                            "page_no": page_index + 1,
+                            "table_index": table_index,
+                            "data": table 
+                        })
+        except Exception as e:
+            print(f"PDFPlumber error on page {page_index + 1}: {e}. Skipping page.")
+            continue
+            
+    return all_tables
+
+def parse_single_pdf_combined(file_path: str) -> dict:
     doc_data = {
         "file_name": os.path.basename(file_path),
-        "pages": []
+        "pages": [],
+        "tables": []
     }
     
     try:
-        doc = fitz.open(file_path)
-        doc_data["total_pages"] = doc.page_count
-        
-        for page_num in range(doc.page_count):
-            page = doc.load_page(page_num)
-  
-            blocks = page.get_text("blocks") 
+        with fitz.open(file_path) as doc:
+            doc_data["total_pages"] = doc.page_count
             
-            page_content = {
-                "page_no": page_num + 1,
-                "blocks": []
-            }
-            
-            for block in blocks:
-                if block[6] == 0:
-                    page_content["blocks"].append({
-                        "text": block[4].strip(),
-                        "bbox": list(block[:4]),
-                        "block_id": block[5]
-                    })
-                    
-            doc_data["pages"].append(page_content)
+            for page_num in range(doc.page_count):
+                page = doc.load_page(page_num)
+                blocks = page.get_text("blocks") 
+                
+                page_content = {
+                    "page_no": page_num + 1,
+                    "blocks": []
+                }
+                
+                for block in blocks:
+                    if block[6] == 0:
+                        page_content["blocks"].append({
+                            "text": block[4].strip(),
+                            "bbox": list(block[:4]),
+                            "block_id": block[5]
+                        })
+                        
+                doc_data["pages"].append(page_content)
+
+        doc_data["tables"] = extract_tables(file_path)
         
-        doc.close()
         return doc_data
         
     except Exception as e:
-        print(f"PyMuPDF error: {e}")
+        print(f"Critical error during parsing: {e}")
         return {}
 
 
@@ -73,7 +104,7 @@ def parse_all_documents():
 
         print(f"Parsing: {rel_path}")
         
-        dict_content = parse_single_pdf_with_fitz(file_path)
+        dict_content = parse_single_pdf_combined(file_path)
         
         if dict_content:
             try:
@@ -87,4 +118,6 @@ def parse_all_documents():
 
 
 if __name__ == "__main__":
+    print("========== Start the parsing process ==========")
     parse_all_documents()
+    print("========== End of parsing ==========")
