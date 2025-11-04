@@ -1,0 +1,15 @@
+raw_data: 
+  3gpp_spec: "data/raw/3gpp_spec/"
+  arxiv: "data/raw/arxiv/"
+  itu_spec: "data/raw/itu_spec/"
+  ieee_spec: "data/raw/ieee_spec/"
+  vn_laws: "data/raw/vn_laws/"
+  vn_spec: "data/raw/vn_spec/"
+
+processed_data: 
+  parsed: "data/processed/parsed/"
+  cleaned: "data/processed/cleaned/"
+  
+embeddings: "data/embeddings/"
+generated: "data/generated/"
+final: "data/final/"

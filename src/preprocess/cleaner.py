@@ -81,7 +81,6 @@ def build_source_origin(file_path: str, source_config: Dict) -> str:
 
 
 def clean_and_chunk_data(parsed_json_path: str, source_config: Dict) -> List[Dict]:
-    """Làm sạch + chia nhỏ dữ liệu từ file parsed JSON."""
     with open(parsed_json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
