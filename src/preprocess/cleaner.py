@@ -4,27 +4,29 @@ import json
 import yaml
 from typing import List, Dict
 
+# --- CẤU HÌNH (Giữ nguyên) ---
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-PARSED_JSON_DIR = os.path.join(PROJECT_ROOT, "data/preprocessed/parsed")
-CLEANED_JSON_DIR = os.path.join(PROJECT_ROOT, "data/preprocessed/cleaned")
+PARSED_JSON_DIR = os.path.join(PROJECT_ROOT, "data/preprocessed/parsed/vn_spec")
+CLEANED_JSON_DIR = os.path.join(PROJECT_ROOT, "data/preprocessed/cleaned/vn_spec")
 SOURCE_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config/source-name.yaml")
 MAX_CHUNK_WORDS = 512
 OVERLAP_WORDS = 128
 
+# --- CÁC HÀM HỖ TRỢ (Giữ nguyên) ---
 
 def load_source_config() -> Dict:
+    # (Giữ nguyên)
     if os.path.exists(SOURCE_CONFIG_PATH):
         with open(SOURCE_CONFIG_PATH, "r", encoding="utf-8") as f:
             return yaml.safe_load(f)
     return {}
 
-
 def clean_text_content(text: str) -> str:
+    # (Giữ nguyên)
     if not text:
         return ""
     text = text.replace("…", ".").replace("·", ".").replace("‧", ".").replace("∙", ".").replace("⋯", ".")
     text = text.replace("–", "-").replace("—", "-").replace("―", "-").replace("_", "-")
-
     text = re.sub(r'([.\-=_*#~])\1{2,}', r'\1', text)
     text = re.sub(r'(?:[\.\-\–\—\·\∙\⋯\=_*~]{4,})', ' ', text)
     text = re.sub(r'[\x00-\x1F\x7F]', '', text) 
@@ -32,12 +34,11 @@ def clean_text_content(text: str) -> str:
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
-
 def split_text_by_words(text: str, max_words: int, overlap_words: int) -> List[str]:
+    # (Giữ nguyên)
     words = text.split()
     chunks = []
     stride = max(max_words - overlap_words, 1)
-
     for start in range(0, len(words), stride):
         end = min(start + max_words, len(words))
         chunk = " ".join(words[start:end])
@@ -46,27 +47,8 @@ def split_text_by_words(text: str, max_words: int, overlap_words: int) -> List[s
             break
     return chunks
 
-
-def format_table_to_string(table_data: List[List[str]]) -> str:
-    if not table_data or len(table_data) < 2:
-        return ""
-
-    headers = [h.strip() if h else f"Col_{i}" for i, h in enumerate(table_data[0])]
-    formatted = "[TECHNICAL TABLE START]\n"
-
-    for i, row in enumerate(table_data[1:]):
-        cells = []
-        for j, value in enumerate(row):
-            header = headers[j] if j < len(headers) else f"Col_{j+1}"
-            value = value.strip() if value else "N/A"
-            cells.append(f"{header}: {value}")
-        formatted += f"ROW {i+1}: " + " | ".join(cells) + "\n"
-
-    formatted += "[TECHNICAL TABLE END]"
-    return formatted
-
-
 def build_source_origin(file_path: str, source_config: Dict) -> str:
+    # (Giữ nguyên)
     parts = file_path.split(os.sep)
     for key in source_config.keys():
         if key in parts:
@@ -79,8 +61,40 @@ def build_source_origin(file_path: str, source_config: Dict) -> str:
             return f"{label}/{'/'.join(sub_path)}" if sub_path else label
     return "Nguồn không xác định"
 
+# --- HÀM ĐÃ SỬA ĐỔI ---
+
+def format_table_to_string(table_data: List[List[str]], caption: str = "") -> str:
+    """
+    Chuyển đổi ma trận bảng và caption thành chuỗi có cấu trúc cho LLM.
+    """
+    if not table_data or len(table_data) < 2:
+        return ""
+
+    headers = [h.strip() if h else f"Col_{i}" for i, h in enumerate(table_data[0])]
+    
+    # --- THÊM CAPTION VÀO ĐẦU ---
+    formatted = ""
+    if caption:
+        formatted = f"[CAPTION: {clean_text_content(caption)}]\n" # Làm sạch caption
+        
+    formatted += "[TECHNICAL TABLE START]\n"
+    # -----------------------------
+
+    for i, row in enumerate(table_data[1:]):
+        cells = []
+        for j, value in enumerate(row):
+            header = headers[j] if j < len(headers) else f"Col_{j+1}"
+            value = value.strip() if value else "N/A"
+            cells.append(f"{header}: {value}")
+        formatted += f"ROW {i+1}: " + " | ".join(cells) + "\n"
+
+    formatted += "[TECHNICAL TABLE END]"
+    return formatted
 
 def clean_and_chunk_data(parsed_json_path: str, source_config: Dict) -> List[Dict]:
+    """
+    Hàm làm sạch chính, truyền caption vào hàm format_table_to_string.
+    """
     with open(parsed_json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -88,6 +102,7 @@ def clean_and_chunk_data(parsed_json_path: str, source_config: Dict) -> List[Dic
     all_chunks = []
     origin = build_source_origin(parsed_json_path, source_config)
 
+    # --- Xử lý Text Blocks (Giữ nguyên) ---
     all_blocks = []
     for page in data.get("pages", []):
         for b in page.get("blocks", []):
@@ -111,10 +126,15 @@ def clean_and_chunk_data(parsed_json_path: str, source_config: Dict) -> List[Dic
                 }
             })
 
+    # --- Xử lý Tables (ĐÃ SỬA ĐỔI) ---
     for table in data.get("tables", []):
         raw_table = table.get("data")
+        caption = table.get("caption", "") # <-- Lấy caption từ file parsed
+        
         if raw_table:
-            table_context = format_table_to_string(raw_table)
+            # Truyền caption vào hàm định dạng
+            table_context = format_table_to_string(raw_table, caption) 
+            
             if table_context:
                 all_chunks.append({
                     "context": table_context,
@@ -130,8 +150,8 @@ def clean_and_chunk_data(parsed_json_path: str, source_config: Dict) -> List[Dic
 
     return all_chunks
 
-
 def clean_all_parsed_documents():
+    # (Hàm này giữ nguyên)
     if not os.path.exists(PARSED_JSON_DIR):
         print(f"Parsed JSON directory not found: {PARSED_JSON_DIR}")
         return
@@ -149,16 +169,20 @@ def clean_all_parsed_documents():
             output_dir = os.path.join(CLEANED_JSON_DIR, rel_path)
             os.makedirs(output_dir, exist_ok=True)
             cleaned_path = os.path.join(output_dir, file_name)
+            
+            # Bỏ qua file đã làm sạch
+            if os.path.exists(cleaned_path):
+                print(f"Skipping (already cleaned): {file_name}")
+                continue
 
             print(f"Cleaning: {file_name}")
             try:
                 chunks = clean_and_chunk_data(parsed_path, source_config)
                 with open(cleaned_path, "w", encoding="utf-8") as f:
                     json.dump(chunks, f, ensure_ascii=False, indent=4)
-                print(f"Saved {len(chunks)} chunks → {cleaned_path}")
+                print(f"Saved {len(chunks)} chunks to {cleaned_path}")
             except Exception as e:
                 print(f"Error cleaning {file_name}: {e}")
-
 
 if __name__ == "__main__":
     print("========== START CLEANING ==========")

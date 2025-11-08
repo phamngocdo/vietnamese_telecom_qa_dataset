@@ -2,10 +2,12 @@ import os
 import json
 import fitz
 import pdfplumber
+import re
+from typing import List, Dict, Optional
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-RAW_DATA_DIR = os.path.join(PROJECT_ROOT, "data/raw")
-PARSED_JSON_DIR = os.path.join(PROJECT_ROOT, "data/preprocessed/parsed")
+RAW_DATA_DIR = os.path.join(PROJECT_ROOT, "data/raw/vn_spec/")
+PARSED_JSON_DIR = os.path.join(PROJECT_ROOT, "data/preprocessed/parsed/vn_spec")
 
 def ensure_dir_exists(path: str):
     os.makedirs(path, exist_ok=True)
@@ -18,34 +20,97 @@ def get_all_pdf_files(root_dir: str):
                 pdf_files.append(os.path.join(root, f))
     return pdf_files
 
-def extract_tables(pdf_path: str):
-    all_tables = []
+def clean_caption_text(text: str) -> str:
+    if not text:
+        return ""
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    return " ".join(lines)
+
+def find_table_caption(page: pdfplumber.page.Page, table_bbox: tuple) -> Optional[str]:
+    (x0, top, x1, bottom) = table_bbox
     
+    search_box_above = (0, max(0, top - 25), page.width, top)
+    search_box_below = (0, bottom, page.width, min(page.height, bottom + 25))
+
+    caption_above = clean_caption_text(page.crop(search_box_above).extract_text())
+    if "bảng" in caption_above.lower() or "table" in caption_above.lower():
+        return caption_above
+    caption_below = clean_caption_text(page.crop(search_box_below).extract_text())
+    if "bảng" in caption_below.lower() or "table" in caption_below.lower():
+        return caption_below
+    return None 
+def extract_tables(pdf_path: str):
+    extracted_tables = []
+    
+    last_valid_caption = None
+    last_page_had_table_at_bottom = False
+
     try:
-        with fitz.open(pdf_path) as doc:
-            total_pages = doc.page_count
-    except Exception:
-        print(f"Failed to get page count for {os.path.basename(pdf_path)}. Skipping tables.")
+        with pdfplumber.open(pdf_path) as pdf:
+            for page_num, page in enumerate(pdf.pages):
+                
+                tables_on_page = page.find_tables()
+                if not tables_on_page:
+                    last_page_had_table_at_bottom = False
+                    continue
+                
+                page_had_table_at_bottom = False
+
+                for table_index, table in enumerate(tables_on_page):
+                    table_data = table.extract()
+                    if not table_data:
+                        continue
+                    
+                    caption = find_table_caption(page, table.bbox)
+                    
+                    is_at_top = table.bbox[1] < 100 # Bảng nằm ở đầu trang
+                    is_continuation = (not caption and last_page_had_table_at_bottom and is_at_top)
+
+                    if caption:
+                        last_valid_caption = caption
+                    elif is_continuation:
+                        caption = last_valid_caption
+                    else:
+                        continue
+                    
+                    extracted_tables.append({
+                        "page_no": page_num + 1,
+                        "table_index": table_index,
+                        "caption": caption,
+                        "data": table_data 
+                    })
+                    
+                    if table.bbox[3] > (page.height - 50):
+                         page_had_table_at_bottom = True
+                
+                last_page_had_table_at_bottom = page_had_table_at_bottom
+
+    except Exception as e:
+        print(f"PDFPlumber table error: {e}")
+        return []
+            
+    if not extracted_tables:
         return []
 
-    for page_index in range(total_pages):
-        try:
-            with pdfplumber.open(pdf_path) as pdf:
-                page = pdf.pages[page_index]
-                tables_on_page = page.extract_tables()
-                
-                for table_index, table in enumerate(tables_on_page):
-                    if table:
-                        all_tables.append({
-                            "page_no": page_index + 1,
-                            "table_index": table_index,
-                            "data": table 
-                        })
-        except Exception as e:
-            print(f"PDFPlumber error on page {page_index + 1}: {e}. Skipping page.")
+    merged_tables = []
+    current_table = None
+
+    for table in extracted_tables:
+        if current_table is None:
+            current_table = table
             continue
-            
-    return all_tables
+        
+        if table['caption'] == current_table['caption']:
+            current_data_no_header = table['data'][1:] if len(table['data']) > 1 else []
+            current_table['data'].extend(current_data_no_header)
+        else:
+            merged_tables.append(current_table)
+            current_table = table
+
+    if current_table:
+        merged_tables.append(current_table)
+
+    return merged_tables
 
 def parse_single_pdf_combined(file_path: str) -> dict:
     doc_data = {
