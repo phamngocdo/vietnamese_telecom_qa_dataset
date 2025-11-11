@@ -1,5 +1,5 @@
 Bạn là **Chuyên gia Kỹ thuật Viễn thông**.  
-Phân tích khối ngữ cảnh kỹ thuật (CONTEXT CHUNK) bên dưới và sinh ra **không giới hạn cặp Câu hỏi–Trả lời (QA pairs)** chất lượng cao để phục vụ fine-tuning mô hình ngôn ngữ lớn.
+Phân tích khối ngữ cảnh kỹ thuật (CONTEXT) bên dưới và sinh ra **các cặp Câu hỏi–Trả lời (QA pairs)** chất lượng cao để phục vụ fine-tuning mô hình ngôn ngữ lớn.
 
 ---
 
@@ -7,7 +7,7 @@ Phân tích khối ngữ cảnh kỹ thuật (CONTEXT CHUNK) bên dưới và si
 
 1. **Số lượng:**  
    - Không giới hạn câu hỏi.  
-   - Nếu [CONTEXT CHUNK] **không chứa đủ dữ liệu kỹ thuật hoặc quá chung chung**, hãy **trả về mảng JSON rỗng**:  
+   - Nếu [CONTEXT] **không chứa đủ dữ liệu kỹ thuật hoặc quá chung chung**, hãy **trả về mảng JSON rỗng**:  
      ```json
      []
      ```
@@ -17,7 +17,8 @@ Phân tích khối ngữ cảnh kỹ thuật (CONTEXT CHUNK) bên dưới và si
    - Giữ nguyên thuật ngữ gốc (3GPP, ITU-R, MIMO, QoS…).
 
 3. **Nguồn nội dung:**  
-   - Câu hỏi và trả lời phải được **trích dẫn trực tiếp hoặc tóm tắt trung thực** từ [CONTEXT CHUNK].  
+   - Câu hỏi và trả lời phải được **trích dẫn trực tiếp hoặc tóm tắt trung thực** từ [CONTEXT].  
+   - Bỏ qua các context có nội dung là mục lục, trích dẫn, thông tin không quan trọng cho viễn thông.
    - Tuyệt đối **không suy đoán, không bịa đặt** thông tin.
 
 4. **Độ dài:**  
@@ -33,7 +34,8 @@ Phân tích khối ngữ cảnh kỹ thuật (CONTEXT CHUNK) bên dưới và si
 - Giữ nguyên đơn vị đo (ms, MHz, Gbps…).  
 - Tên tổ chức hoặc công nghệ phải viết hoa đúng chuẩn (3GPP, ITU-R, ETSI, IEEE…).  
 - Không sinh ví dụ, không câu hỏi tu từ hoặc nhận xét chủ quan.  
-- Nếu [CONTEXT CHUNK] có cấu trúc bảng, công thức, danh mục → chỉ trích thông tin có thể hiểu thành ngôn ngữ tự nhiên.
+- Nếu [CONTEXT] có cấu trúc bảng, công thức, danh mục → chỉ trích thông tin có thể hiểu thành ngôn ngữ tự nhiên.
+- Không sinh các câu hỏi/câu trả lời chỉ mục (ví dụ: theo bảng 1, theo mục 1.3, theo hình 2,...)
 
 ---
 
@@ -43,20 +45,29 @@ Chỉ sinh khi trong ngữ cảnh có đủ dữ kiện.
 Thứ tự ưu tiên từ cao xuống thấp:
 
 ### Định nghĩa / Khái niệm (Definition)
+* “LAN viết tắt cho từ gì?”  
+* “Khái niệm QoS trong mạng di động có nghĩa là gì?”
 
 ### Chức năng / Thành phần / Chuẩn (Functionality & Standards)
+* “Vai trò của lớp RRC trong mạng 5G là gì?”  
+* “Theo ITU-R, có bao nhiêu dải tần được quy định cho 5G?”
 
 ### So sánh / Đặc tính / Thông số kỹ thuật (Comparison & Characteristics)
+* “Sự khác biệt giữa 4G và 5G về độ trễ là gì?”  
+* “Đặc điểm nổi bật của URLLC là gì?”
 
 ### Quy trình / Cơ chế hoạt động (Process & Mechanism)
+* “Cách hoạt động của beamforming trong MIMO là gì?”  
+* “Handover trong mạng 5G diễn ra như thế nào?”
 
 ### Thách thức / Hạn chế kỹ thuật (Challenges & Limitations)
+* “Thách thức khi triển khai mạng mmWave là gì?”  
+* “Nguyên nhân chính gây nhiễu tín hiệu là gì?”
 
 ---
 
-## [CONTEXT CHUNK]
----
-{context_chunk}
+## [CONTEXT]
+{context}
 ---
 
 ## ĐỊNH DẠNG ĐẦU RA (Output)
