@@ -1,7 +1,8 @@
-class LLMBase():
-    def __init__(self, model, key, prompt_path, prompt_lang, is_validator):
+from abc import ABC, abstractmethod
+
+class LLMBase(ABC):
+    def __init__(self, model, prompt_path, prompt_lang, is_validator):
         self.model = model
-        self.key = key
         self.prompt_path = prompt_path
         self.prompt_lang = prompt_lang
         self.is_validator = is_validator
@@ -15,9 +16,11 @@ class LLMBase():
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
 
+    @abstractmethod
     def generate_qna(self, context):
         pass
 
+    @abstractmethod
     def validate_qna(self, context, question, answer):
         pass
 

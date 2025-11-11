@@ -17,6 +17,7 @@ def clean_text_content(text: str) -> str:
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
+
 def split_text_by_words(text, max_words, overlap_words):
     words = text.split()
     chunks = []
@@ -28,6 +29,7 @@ def split_text_by_words(text, max_words, overlap_words):
         if end == len(words):
             break
     return chunks
+
 
 def build_source_origin(file_path: str, source_config):
     parts = file_path.split(os.sep)
@@ -42,6 +44,7 @@ def build_source_origin(file_path: str, source_config):
             return f"{label}/{'/'.join(sub_path)}" if sub_path else label
     return os.path.basename(file_path)
 
+
 def _is_block_inside_table(block_bbox: List[float], table_bboxes: List[Tuple[float]]) -> bool:
     b_x0, b_y0, b_x1, b_y1 = block_bbox
     
@@ -54,6 +57,7 @@ def _is_block_inside_table(block_bbox: List[float], table_bboxes: List[Tuple[flo
         if (t_x0 <= block_center_x <= t_x1) and (t_y0 <= block_center_y <= t_y1):
             return True
     return False
+
 
 def format_table_to_string(table_data: List[List[str]], caption: str, surrounding_context: str) -> str:
     if not table_data or len(table_data) < 2:
@@ -79,6 +83,7 @@ def format_table_to_string(table_data: List[List[str]], caption: str, surroundin
 
     formatted += "[TECHNICAL TABLE END]"
     return formatted
+
 
 def clean_and_chunk_data(parsed_json_path: str, source_config: Dict) -> List[Dict]:
     with open(parsed_json_path, "r", encoding="utf-8") as f:
@@ -132,6 +137,7 @@ def clean_and_chunk_data(parsed_json_path: str, source_config: Dict) -> List[Dic
                 })
 
     return all_chunks
+
 
 def clean_all_parsed_documents():
     if not os.path.exists(PARSED_JSON_DIR):

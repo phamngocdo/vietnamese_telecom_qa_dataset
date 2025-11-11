@@ -12,6 +12,7 @@ def _clean_caption_text(text: str) -> str:
     lines = [line.strip() for line in text.split('\n') if line.strip()]
     return " ".join(lines)
 
+
 def _find_table_caption_and_context(page: pdfplumber.page.Page, table_bbox: tuple) -> Tuple[Optional[str], str]:
     (x0, top, x1, bottom) = table_bbox
     caption = None
@@ -20,8 +21,8 @@ def _find_table_caption_and_context(page: pdfplumber.page.Page, table_bbox: tupl
     search_x0 = max(0, x0 - H_PADDING)
     search_x1 = min(page.width, x1 + H_PADDING)
     
-    search_box_above = (search_x0, max(0, top - 40), search_x1, top)
-    search_box_below = (search_x0, bottom, search_x1, min(page.height, bottom + 40))
+    search_box_above = (search_x0, max(0, top - 20), search_x1, top)
+    search_box_below = (search_x0, bottom, search_x1, min(page.height, bottom + 20))
 
     caption_above = _clean_caption_text(page.crop(search_box_above).extract_text(x_tolerance=3))
     caption_below = _clean_caption_text(page.crop(search_box_below).extract_text(x_tolerance=3))
@@ -41,6 +42,7 @@ def _find_table_caption_and_context(page: pdfplumber.page.Page, table_bbox: tupl
     surrounding_context = (text_above + "\n" + text_below).strip()
     
     return caption, surrounding_context
+
 
 def extract_tables(pdf_path: str):
     all_tables = []
@@ -73,6 +75,7 @@ def extract_tables(pdf_path: str):
     
     return all_tables
 
+
 def parse_single_pdf_combined(file_path: str) -> dict:
     doc_data = {
         "file_name": os.path.basename(file_path),
@@ -102,6 +105,7 @@ def parse_single_pdf_combined(file_path: str) -> dict:
     except Exception as e:
         print(f"Critical error during parsing: {e}")
         return {}
+    
 
 def get_all_pdf_files(root_dir: str):
     pdf_files = []
@@ -110,6 +114,7 @@ def get_all_pdf_files(root_dir: str):
             if f.lower().endswith(".pdf"):
                 pdf_files.append(os.path.join(root, f))
     return pdf_files
+
 
 def parse_all_documents():
     ensure_dir_exists(PARSED_JSON_DIR)

@@ -1,0 +1,10 @@
+generator:
+  model: "gemini-2.0-flash"
+  class: "GeminiLLM"
+
+validator:
+  model: "gemini-2.5-flash"
+  class: "GeminiLLM"
+
+prompt_lang: "vi"
+prompt_path: "src/llm/prompts/"
