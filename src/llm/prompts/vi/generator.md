@@ -35,7 +35,7 @@ Phân tích khối ngữ cảnh kỹ thuật (CONTEXT) bên dưới và sinh ra 
 - Tên tổ chức hoặc công nghệ phải viết hoa đúng chuẩn (3GPP, ITU-R, ETSI, IEEE…).  
 - Không sinh ví dụ, không câu hỏi tu từ hoặc nhận xét chủ quan.  
 - Nếu [CONTEXT] có cấu trúc bảng, công thức, danh mục → chỉ trích thông tin có thể hiểu thành ngôn ngữ tự nhiên.
-- Không sinh các câu hỏi/câu trả lời chỉ mục (ví dụ: theo bảng 1, theo mục 1.3, theo hình 2,...)
+- Không sinh các câu hỏi/câu trả lời tham chiếu, chỉ mục (ví dụ: theo bảng 1, trong mục 1.3, theo hình 2,...)
 
 ---
 

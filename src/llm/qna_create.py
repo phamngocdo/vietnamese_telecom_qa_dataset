@@ -196,9 +196,11 @@ def create_qna_from_file(generator, validator, input_dir=CLEANED_JSON_DIR, outpu
                 print(f"CRITICAL ERROR processing file {file_name}: {e}")
             finally:
                 total_qna += count_qna_for_file
-                print(f"Progress saved {count_qna_for_file} QA pairs to {output_file_path} in {(time.time() - time_start) / 60} minutes.")
+                time_end = (time.time() - time_start) / 60
+                print(f"Progress saved {count_qna_for_file} QA pairs to {output_file_path} in {time_end:.2f} minutes.")
 
-    print(f"\nProgress completed. Progress created {total_qna} QA pairs in {(time.time() - time_start) / 60} minutes.")
+    total_time = (time.time() - time_start) / 60
+    print(f"\nProgress completed. Progress created {total_qna} QA pairs in {total_time:.2f} minutes.")
 
 
 if __name__ == "__main__":

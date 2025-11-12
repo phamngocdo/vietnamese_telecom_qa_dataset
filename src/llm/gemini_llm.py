@@ -68,20 +68,17 @@ class GeminiLLM(LLMBase):
 
             except Exception as e:
                 err_msg = str(e)
-                print(f"API error (attempt {attempt}/{self.max_tries}): {err_msg}")
+                print(f"Validation API error (attempt {attempt}/{self.max_tries}): {err_msg}")
 
-                if "RESOURCE_EXHAUSTED" in err_msg or "429" in err_msg:
-                    if attempt < self.max_tries:
-                        print(f"Resource exhausted. Waiting {self.time_sleep_if_rate_limit / 60} minutes before retry...")
-                        time.sleep(self.time_sleep_if_rate_limit)
-                        continue
-                    else:
-                        print("Max tries reached. Skipping this context.")
-                        return []
+                if attempt < self.max_tries:
+                    print(f"Waiting {self.time_sleep_if_rate_limit / 60} minutes before retry...")
+                    time.sleep(self.time_sleep_if_rate_limit)
+                    continue
                 else:
-                    return []
+                    print("Max tries reached for generation.")
+                    return None
 
-        return []
+        return None
 
     def validate_qna(self, context, qna_list):
         if not self.is_validator:
