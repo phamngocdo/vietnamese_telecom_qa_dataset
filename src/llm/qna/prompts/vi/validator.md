@@ -31,19 +31,17 @@ Một cặp QA được đánh giá là **`false`** (không phù hợp) nếu:
 ## ĐẦU VÀO (INPUT)
 Input là một đối tượng JSON duy nhất.
 
-```json
 {
   "context": "{context}",
   "qna_counts": "{qna_counts}",
   "qna_list": {qna_list}
 }
-```
 
 ---
 
-## ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (MANDATORY OUTPUT)
-**CHỈ TRẢ VỀ MỘT MẢNG BOOLEAN GỒM DUY NHẤT.**
-Mảng này phải có số lượng phần tử bằng chính xác số lượng trong qna_list đầu vào.
+## ĐỊNH DẠNG ĐẦU RA BẮT BUỘC
+**CHỈ TRẢ VỀ MỘT MẢNG BOOLEAN DUY NHẤT.**
+Mảng này phải có số lượng phần tử bằng {qna_counts}.
 **KHÔNG** thêm bất kỳ văn bản giải thích, lời chào, hay mã Markdown nào.
 Phản hồi của bạn phải BẮT ĐẦU bằng ký tự [ và KẾT THÚC bằng ký tự ].
 
@@ -52,7 +50,6 @@ Phản hồi của bạn phải BẮT ĐẦU bằng ký tự [ và KẾT THÚC b
 ## VÍ DỤ
 **Input:**
 
-```json
 {
     "context": "IEEE 802.11ax-2021 định nghĩa Wi-Fi 6 với tốc độ cao và độ trễ thấp.",
     "qna_counts": "3",
@@ -62,9 +59,6 @@ Phản hồi của bạn phải BẮT ĐẦU bằng ký tự [ và KẾT THÚC b
         { "question": "Chuẩn này định nghĩa gì", "answer": "Theo mục 1, Wi-Fi 6 được định nghĩa để cải thiện tốc độ và giảm độ trễ mạng"}
     ]
 }
-```
 
 **Output:**
-```
 [true, false, false]
-```

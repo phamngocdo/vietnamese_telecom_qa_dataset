@@ -6,13 +6,14 @@ from google.genai import types
 from base import LLMBase
 
 class GeminiLLM(LLMBase):
-    def __init__(self, model="gemini-2.0-flash", key=None, prompt_path=None, prompt_lang="vi",
+    def __init__(self, model="gemini-2.0-flash", key=None, prompt_lang="vi",
                 is_validator=True, max_tries=3, time_sleep_if_rate_limit=180):
-        super().__init__(model, prompt_path, prompt_lang, is_validator)
+        super().__init__(model, prompt_lang, is_validator)
         self.key = key
         self.max_tries = max_tries
         self.time_sleep_if_rate_limit = time_sleep_if_rate_limit
         self.init_client()
+
 
     def init_client(self):
         if self.key:
@@ -24,6 +25,7 @@ class GeminiLLM(LLMBase):
         else:
             print("Missing GEMINI_API_KEY environment variable.")
 
+
     def safe_json_parse(self, text):
         match = re.search(r"\[.*\]", text, re.DOTALL)
         if not match:
@@ -32,6 +34,7 @@ class GeminiLLM(LLMBase):
             return json.loads(match.group(0))
         except Exception:
             return []
+        
 
     def generate_qna(self, context):
         if self.is_validator:
@@ -79,6 +82,7 @@ class GeminiLLM(LLMBase):
                     return None
 
         return None
+    
 
     def validate_qna(self, context, qna_list):
         if not self.is_validator:

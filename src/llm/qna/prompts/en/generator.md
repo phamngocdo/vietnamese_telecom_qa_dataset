@@ -75,14 +75,10 @@ Priority order (from highest to lowest):
 Return **exactly one valid JSON array**, with no extra description, markdown, or commentary.
 
 Example:
-```json
 [
-  {"question": "What does QoS mean in mobile networks?", "answer": "QoS refers to the Quality of Service ensuring network performance."},
-  {"question": "What is the main objective of 5G NR?", "answer": "To meet requirements of high bandwidth, low latency, and massive connectivity."}
+  {"question": "Khái niệm QoS trong mạng di động là gì?", "answer": "QoS là chất lượng dịch vụ đảm bảo hiệu năng mạng."},
+  {"question": "Mục tiêu của 5G NR là gì?", "answer": "Đáp ứng các yêu cầu băng thông, độ trễ thấp và kết nối lớn."}
 ]
-```
 
 If there are **no valid questions**, return **exactly**:
-```json
 []
-```
