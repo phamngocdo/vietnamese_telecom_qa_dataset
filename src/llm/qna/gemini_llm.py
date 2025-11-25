@@ -8,7 +8,7 @@ from base import LLMBase
 class GeminiLLM(LLMBase):
     def __init__(self, model="gemini-2.0-flash", key=None, prompt_lang="vi",
                 is_validator=True, max_tries=3, time_sleep_if_rate_limit=180):
-        super().__init__(model, prompt_lang, is_validator)
+        super().__init__(model, prompt_lang, is_validator, "qna")
         self.key = key
         self.max_tries = max_tries
         self.time_sleep_if_rate_limit = time_sleep_if_rate_limit
@@ -36,7 +36,7 @@ class GeminiLLM(LLMBase):
             return []
         
 
-    def generate_qna(self, context):
+    def generate(self, context):
         if self.is_validator:
             print("This instance is configured as a validator, not a generator.")
             return []
@@ -84,7 +84,7 @@ class GeminiLLM(LLMBase):
         return None
     
 
-    def validate_qna(self, context, qna_list):
+    def validate(self, context, qna_list):
         if not self.is_validator:
             print("This instance is configured as a generator, not a validator.")
             return None
