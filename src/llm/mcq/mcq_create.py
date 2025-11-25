@@ -74,13 +74,15 @@ def load_llm_instances(config_path=LLM_CONFIG_PATH):
     return generator, validator
 
 
-def process_single_chunk(chunk, generator, validator, time_delay_seconds=10):
+def process_single_chunk(chunk, generator, validator, time_delay_seconds=15):
     context = chunk.get("context")
     source = chunk.get("source")
 
     if not context or not source:
         return []
     
+    time.sleep(time_delay_seconds)
+
     generated_mcq_list = generator.generate_mcq(context)
     if not generated_mcq_list:
         print("      -> Generator returned no results.")
@@ -109,8 +111,6 @@ def process_single_chunk(chunk, generator, validator, time_delay_seconds=10):
                 "source": source 
             }
             validated_mcqs.append(validated_data)
-        else:
-            print(f"      -> MCQ rejected by Validator.")
             
     return validated_mcqs
 

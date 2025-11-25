@@ -115,7 +115,6 @@ class GeminiLLM(LLMBase):
             return None
 
         mcqs_without_answer = self.strip_mcq_fields(mcq_list)
-        print(mcqs_without_answer)
         correct_answers = [mcq.get("answer") for mcq in mcq_list]
         mcq_counts = len(mcq_list)
 
