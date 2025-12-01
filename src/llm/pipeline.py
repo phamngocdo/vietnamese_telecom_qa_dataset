@@ -4,11 +4,15 @@ import yaml
 import time
 from dotenv import load_dotenv
 
-from mcq.gemini_llm import GeminiLLM as mcq_gemini
+import sys
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+sys.path.append(PROJECT_ROOT)
+
+from src.llm.mcq.gemini_llm import GeminiLLM as mcq_gemini
 # from mcq.openai_llm import OpenAILLM as mcq_openai
 # from mcq.huggingface_llm import HuggingFaceLLM as mcq_huggingface
 
-from qna.gemini_llm import GeminiLLM as qna_gemini
+from src.llm.qna.gemini_llm import GeminiLLM as qna_gemini
 # from qna.openai_llm import OpenAILLM as qna_openai
 # from qna.huggingface_llm import HuggingFaceLLM as qna_huggingface
 

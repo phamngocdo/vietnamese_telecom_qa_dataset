@@ -3,7 +3,7 @@ import re
 import json
 from typing import List, Dict, Tuple
 
-from src.preprocess.config import PARSED_JSON_DIR, CLEANED_JSON_DIR, load_source_config, ensure_dir_exists, MAX_CHUNK_WORDS, OVERLAP_WORDS
+from src.preprocess.config import PARSED_JSON_DIR, CLEANED_JSON_DIR, load_source_config, MAX_CHUNK_WORDS, OVERLAP_WORDS
 
 def clean_text_content(text: str) -> str:
     if not text:
