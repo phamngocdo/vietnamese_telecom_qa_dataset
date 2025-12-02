@@ -1,95 +1,12 @@
 import os
 import json
-import yaml
-import time
-from dotenv import load_dotenv
+import time 
 
 import sys
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.append(PROJECT_ROOT)
 
-from src.llm.mcq.gemini_llm import GeminiLLM as mcq_gemini
-# from mcq.openai_llm import OpenAILLM as mcq_openai
-# from mcq.huggingface_llm import HuggingFaceLLM as mcq_huggingface
-
-from src.llm.qna.gemini_llm import GeminiLLM as qna_gemini
-# from qna.openai_llm import OpenAILLM as qna_openai
-# from qna.huggingface_llm import HuggingFaceLLM as qna_huggingface
-
-load_dotenv()
-
-def load_llm_config(yaml_path):
-    with open(yaml_path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
-
-    for name, section in config.items():
-        if not isinstance(section, dict):
-            continue
-        
-        llm_class = section.get("class", "").lower()
-
-        if "openai" in llm_class:
-            api_key = os.getenv("OPENAI_API_KEY")
-            if not api_key:
-                raise ValueError(f"Missing OPENAI_API_KEY in environment for section '{name}'")
-            section["api_key"] = api_key
-
-        elif "gemini" in llm_class:
-            api_key = os.getenv("GEMINI_API_KEY")
-            if not api_key:
-                raise ValueError(f"Missing GEMINI_API_KEY in environment for section '{name}'")
-            section["api_key"] = api_key
-    return config
-
-
-def load_model(model_config, prompt_lang, is_validator=False, api_key=None, type_data="mcq"):
-    llm_class = model_config.get("class").lower()
-    model = model_config.get("model")
-    if "openai" in llm_class:
-        if type_data == "mcq":
-            return mcq_openai(model=model, key=api_key, prompt_lang=prompt_lang, is_validator=is_validator)
-        return qna_openai(model=model, key=api_key, prompt_lang=prompt_lang, is_validator=is_validator)
-    elif "gemini" in llm_class:
-        if type_data == "mcq":
-            return mcq_gemini(model=model, key=api_key, prompt_lang=prompt_lang, is_validator=is_validator)
-        return qna_gemini(model=model, key=api_key, prompt_lang=prompt_lang, is_validator=is_validator)
-    elif "huggingface" in llm_class:
-        if type_data == "mcq":
-            return mcq_huggingface(model=model, prompt_lang=prompt_lang, is_validator=is_validator)
-        return qna_huggingface(model=model, prompt_lang=prompt_lang, is_validator=is_validator)
-    else:
-        raise ValueError(f"Unsupported LLM class: {llm_class}")
-    
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-LLM_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config/llm.yaml")
-
-config = load_llm_config(LLM_CONFIG_PATH)
-generator_config = config.get("generator")
-validator_config = config.get("validator")
-prompt_lang = config.get("prompt_lang", "vi")
-
-CLEANED_JSON_DIR = os.path.join(PROJECT_ROOT, "data/preprocessed/cleaned/add")
-DATA_TYPE = config.get("data_type", "mcq")
-GENERATED_DIR = os.path.join(PROJECT_ROOT, f"data/generated/{DATA_TYPE}/add")
-TIME_DELAY_SECONDS = 15
-
-print("========== Loading LLM Configuration ==========")
-
-generator = load_model(
-    generator_config,
-    prompt_lang,
-    is_validator=False,
-    api_key=generator_config.get("api_key"),
-    type_data=DATA_TYPE
-)
-
-validator = load_model(
-    validator_config,
-    prompt_lang,
-    is_validator=True,
-    api_key=validator_config.get("api_key"),
-    type_data=DATA_TYPE
-)
+from src.llm.config import generator, validator, DATA_TYPE, TIME_DELAY_SECONDS, CLEANED_DIR, GENERATED_DIR
 
 
 def process_single_chunk(chunk, generator, validator):
@@ -225,7 +142,7 @@ def create_quest_from_file(file_path, output_file_path, generator, validator):
     return quests_created_count
 
 
-def create_quest_from_folder(generator, validator, input_dir=CLEANED_JSON_DIR, output_dir=GENERATED_DIR):
+def create_quest_from_folder(generator, validator, input_dir=CLEANED_DIR, output_dir=GENERATED_DIR):
     if not os.path.exists(input_dir):
         print(f"Error: Cleaned data directory not found: {input_dir}")
         return
@@ -263,7 +180,7 @@ if __name__ == "__main__":
     try:
         print("========== Loading LLM Configuration ==========")        
         print("\n========== Starting Generation Pipeline ==========")
-        create_quest_from_folder(generator, validator, CLEANED_JSON_DIR, GENERATED_DIR)
+        create_quest_from_folder(generator, validator, CLEANED_DIR, GENERATED_DIR)
         print("\n========== Generation Pipeline Finished ==========")
         
     except Exception as e:

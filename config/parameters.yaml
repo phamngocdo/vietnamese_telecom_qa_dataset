@@ -1,3 +1,6 @@
+max_chunk_words: 512
+overlap_words: 64
+
 generator:
   model: "gemini-2.0-flash"
   class: "GeminiLLM"
@@ -8,4 +11,6 @@ validator:
 
 prompt_lang: "vi"
 
-data_type: "mcq"
+data_type: "qna"
+
+time_delay_seconds: 15

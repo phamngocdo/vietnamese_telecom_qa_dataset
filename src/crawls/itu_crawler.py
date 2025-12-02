@@ -7,6 +7,10 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
+from src.crawls.config import RAW_DATA_PATH
+
+OUTPUT_DIR = os.path.join(RAW_DATA_PATH, "itu_spec")
+
 ITU_SERIES = {
     "G": [
         *[str(i) for i in range(1000, 1040)],  # G.1000–G.1039: QoS framework, QoE, transmission
@@ -46,7 +50,7 @@ class ItuSpider(Spider):
     allowed_domains = ["www.itu.int"]
 
     custom_settings = {
-        "FILES_STORE": "data/raw/itu_spec/",
+        "FILES_STORE": OUTPUT_DIR,
         "DOWNLOAD_DELAY": 1,
         "CONCURRENT_REQUESTS": 2,
         "USER_AGENT": (

@@ -3,8 +3,9 @@ import os
 import requests
 import time
 
-OUTPUT_DIR = "data/raw/arxiv"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+from src.crawls.config import RAW_DATA_PATH
+
+OUTPUT_DIR = os.path.join(RAW_DATA_PATH, "arxiv")
 
 QUERY = '"4G" OR "5G" OR "6G" OR "telecommunication" OR "network slicing" OR "beamforming" OR "MIMO"'
 

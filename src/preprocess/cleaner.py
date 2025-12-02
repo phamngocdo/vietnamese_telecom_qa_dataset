@@ -3,7 +3,7 @@ import re
 import json
 from typing import List, Dict, Tuple
 
-from src.preprocess.config import PARSED_JSON_DIR, CLEANED_JSON_DIR, load_source_config, MAX_CHUNK_WORDS, OVERLAP_WORDS
+from src.preprocess.config import PARSED_JSON_DIR, CLEANED_JSON_DIR, MAX_CHUNK_WORDS, OVERLAP_WORDS, SOURCE_CONFIG
 
 def clean_text_content(text: str) -> str:
     if not text:
@@ -145,7 +145,6 @@ def clean_all_parsed_documents():
         return
 
     os.makedirs(CLEANED_JSON_DIR, exist_ok=True)
-    source_config = load_source_config()
 
     for root, _, files in os.walk(PARSED_JSON_DIR):
         for file_name in files:
@@ -164,7 +163,7 @@ def clean_all_parsed_documents():
 
             print(f"Cleaning: {file_name}")
             try:
-                chunks = clean_and_chunk_data(parsed_path, source_config)
+                chunks = clean_and_chunk_data(parsed_path, SOURCE_CONFIG)
                 with open(cleaned_path, "w", encoding="utf-8") as f:
                     json.dump(chunks, f, ensure_ascii=False, indent=4)
                 print(f"Saved {len(chunks)} chunks -> {cleaned_path}")

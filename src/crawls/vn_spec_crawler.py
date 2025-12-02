@@ -7,7 +7,9 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from utils.file_helpers import convert_doc_to_pdf
+from src.crawls.config import RAW_DATA_PATH
 
+OUTPUT_DIR = os.path.join(RAW_DATA_PATH, "vn_spec")
 
 class VnSpecFilesPipeline(FilesPipeline):
     def file_path(self, request, response=None, info=None, *, item=None):
@@ -52,7 +54,7 @@ class VnSpecSpider(Spider):
         "ROBOTSTXT_OBEY": True,
         "MEDIA_ALLOW_REDIRECTS": True,
         "REDIRECT_ENABLED": True,
-        "FILES_STORE": "data/raw/vn_spec/",
+        "FILES_STORE": OUTPUT_DIR,
         "ITEM_PIPELINES": {
             "__main__.VnSpecFilesPipeline": 1,
         },

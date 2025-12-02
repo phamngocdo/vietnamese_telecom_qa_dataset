@@ -1,0 +1,13 @@
+raw: "data/raw/"
+
+preprocessed:
+  parsed: "data/preprocessed/parsed/"
+  cleaned: "data/preprocessed/cleaned/"
+
+postprocessed:
+  pending: "data/postprocessed/pending/"
+  approved: "data/postprocessed/approved/"
+
+generated: "data/generated/"
+
+final: "data/final/"

@@ -1,12 +1,20 @@
 import os
+import yaml
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-GENERATOR_JSON_DIR = os.path.join(PROJECT_ROOT, "data/generated/")
-POST_PROCESSED_DIR = os.path.join(PROJECT_ROOT, "data/postprocessed/")
-FINAL_FILE = os.path.join(PROJECT_ROOT, "data/final/dataset.json")
-STAGING_PENDING_DIR = os.path.join(POST_PROCESSED_DIR, "pending")
 
-TARGET_SUBDIRS = ["mcq", "qna"]
+with open(os.path.join(PROJECT_ROOT, "config/path.yaml"), "r", encoding="utf-8") as f:
+    data_paths = yaml.safe_load(f)
+
+GENERATOR_DIR = data_paths["generated"]
+FINAL_FILE = data_paths["final"]
+STAGING_PENDING_DIR = data_paths["postprocessed"]["pending"]
+
+with open(os.path.join(PROJECT_ROOT, "config/parameters.yaml"), "r", encoding="utf-8") as f:
+    parameters = yaml.safe_load(f)
+
+DATA_TYPE = parameters["data_type"]
+
 SPARK_MEMORY = "4g"
 SPARK_APP_NAME = "TelecomQA_Postprocessing"
 

@@ -9,6 +9,9 @@ import shutil
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from utils.file_helpers import extract_nested_zip, convert_doc_to_pdf
+from src.crawls.config import RAW_DATA_PATH
+
+OUTPUT_DIR = os.path.join(RAW_DATA_PATH, "3gpp_spec")
 
 RELEASES = [f"Rel-{i}" for i in [15, 16, 17, 18]]
 
@@ -170,7 +173,7 @@ class ThreeGPPSpider(Spider):
 
             file_url = urljoin(response.url, file_link)
             extract_path = os.path.join(
-                "data/raw/3gpp_spec/",
+                OUTPUT_DIR,
                 release,
                 series,
                 file_name.replace(".zip", "")

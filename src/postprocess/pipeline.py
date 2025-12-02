@@ -6,7 +6,7 @@ sys.path.append(PROJECT_ROOT)
 
 import shutil
 import glob
-from src.postprocess.config import GENERATOR_JSON_DIR, STAGING_PENDING_DIR, FINAL_FILE, TARGET_SUBDIRS
+from src.postprocess.config import GENERATOR_DIR, STAGING_PENDING_DIR, FINAL_FILE, DATA_TYPE
 from src.postprocess.spark_ops import (
     init_spark_session, read_and_merge_data, 
     filter_invalid_questions, internal_deduplication, 
@@ -110,33 +110,29 @@ def process_single_file(spark, input_file_path, output_file_path, master_file_pa
 
 def run_pipeline():
     spark = init_spark_session()
-    print(f"Source: {GENERATOR_JSON_DIR}")
+    print(f"Source: {GENERATOR_DIR}")
     print(f"Target: {STAGING_PENDING_DIR}\n")
 
-    for subdir in TARGET_SUBDIRS:
-        source_type_dir = os.path.join(GENERATOR_JSON_DIR, subdir)
-        target_type_dir = os.path.join(STAGING_PENDING_DIR, subdir)
+    source_type_dir = os.path.join(GENERATOR_DIR, DATA_TYPE)
+    target_type_dir = os.path.join(STAGING_PENDING_DIR, DATA_TYPE)
         
-        if not os.path.exists(source_type_dir):
-            continue
+    print(f"\n========== Processing Type: {DATA_TYPE.upper()} ==========")
+    
+    for root, _, files in os.walk(source_type_dir):
+        for file_name in files:
+            if not file_name.endswith(".json"):
+                continue
             
-        print(f"\n========== Processing Type: {subdir.upper()} ==========")
-        
-        for root, _, files in os.walk(source_type_dir):
-            for file_name in files:
-                if not file_name.endswith(".json"):
-                    continue
-                
-                input_path = os.path.join(root, file_name)
-                rel_path = os.path.relpath(root, source_type_dir)
-                output_dir = os.path.join(target_type_dir, rel_path)
-                os.makedirs(output_dir, exist_ok=True)
-                output_path = os.path.join(output_dir, file_name)
-                if os.path.exists(output_path):
-                    print(f"  -> Skip (already exists): {output_path}")
-                    continue
-                
-                process_single_file(spark, input_path, output_path, FINAL_FILE)
+            input_path = os.path.join(root, file_name)
+            rel_path = os.path.relpath(root, source_type_dir)
+            output_dir = os.path.join(target_type_dir, rel_path)
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, file_name)
+            if os.path.exists(output_path):
+                print(f"  -> Skip (already exists): {output_path}")
+                continue
+            
+            process_single_file(spark, input_path, output_path, FINAL_FILE)
 
     spark.stop()
 
