@@ -3,6 +3,8 @@ import os
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 GENERATOR_JSON_DIR = os.path.join(PROJECT_ROOT, "data/generated/")
 POST_PROCESSED_DIR = os.path.join(PROJECT_ROOT, "data/postprocessed/")
+FINAL_FILE = os.path.join(PROJECT_ROOT, "data/final/dataset.json")
+STAGING_PENDING_DIR = os.path.join(POST_PROCESSED_DIR, "pending")
 
 TARGET_SUBDIRS = ["mcq", "qna"]
 SPARK_MEMORY = "4g"

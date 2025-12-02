@@ -6,7 +6,7 @@ sys.path.append(PROJECT_ROOT)
 
 import shutil
 import glob
-from src.postprocess.config import GENERATOR_JSON_DIR, POST_PROCESSED_DIR, TARGET_SUBDIRS
+from src.postprocess.config import GENERATOR_JSON_DIR, STAGING_PENDING_DIR, FINAL_FILE, TARGET_SUBDIRS
 from src.postprocess.spark_ops import (
     init_spark_session, read_and_merge_data, 
     filter_invalid_questions, internal_deduplication, 
@@ -36,30 +36,18 @@ def finalize_single_json(spark_output_dir, target_file_path):
     return False
 
 
-def global_deduplication(spark, df_local, global_output_dir):
-    if not os.path.exists(global_output_dir):
-        return df_local, df_local.count()
-        
-    has_global_data = False
-    for root, _, files in os.walk(global_output_dir):
-        if any(f.endswith('.json') for f in files):
-            has_global_data = True
-            break
-    
-    if not has_global_data:
+def global_deduplication(spark, df_local, master_file_path):
+    if not os.path.exists(master_file_path):
         return df_local, df_local.count()
 
     try:
-        df_existing_global = spark.read.option("recursiveFileLookup", "true") \
-                                       .option("pathGlobFilter", "*.json") \
-                                       .option("multiline", "true") \
-                                       .json(global_output_dir)
+        df_master = spark.read.option("multiline", "true").json(master_file_path)
         
-        df_existing_norm = add_normalization_columns(df_existing_global)
-        existing_keys = df_existing_norm.select("norm_question", "norm_answer").distinct()
+        df_master_norm = add_normalization_columns(df_master)
+        master_keys = df_master_norm.select("norm_question", "norm_answer").distinct()
         
         df_final = df_local.join(
-            existing_keys, 
+            master_keys, 
             on=["norm_question", "norm_answer"], 
             how="left_anti"
         )
@@ -91,7 +79,7 @@ def save_final_dataframe(df, output_file_path):
         print("  -> Error saving file.")
 
 
-def process_single_file(spark, input_file_path, output_file_path, global_output_dir):
+def process_single_file(spark, input_file_path, output_file_path, master_file_path):
     file_name = os.path.basename(input_file_path)
     print(f"\nProcessing: {file_name}")
     
@@ -108,11 +96,11 @@ def process_single_file(spark, input_file_path, output_file_path, global_output_
     df_internal_dedup, count_internal = internal_deduplication(df_filtered)
     print(f"  -> After Internal Dedup: {count_internal} (Dropped {count_filtered - count_internal})")
 
-    df_final, count_final = global_deduplication(spark, df_internal_dedup, global_output_dir)
+    df_final, count_final = global_deduplication(spark, df_internal_dedup, master_file_path)
     if count_internal > count_final:
-        print(f"  -> After Global Dedup: {count_final} (Dropped {count_internal - count_final} duplicates)")
+        print(f"  -> After Master Dedup: {count_final} (Dropped {count_internal - count_final} duplicates found in Master)")
     else:
-        print(f"  -> Global Dedup: No duplicates found.")
+        print(f"  -> Master Dedup: No duplicates found in Master.")
 
     if count_final > 0:
         save_final_dataframe(df_final, output_file_path)
@@ -123,11 +111,11 @@ def process_single_file(spark, input_file_path, output_file_path, global_output_
 def run_pipeline():
     spark = init_spark_session()
     print(f"Source: {GENERATOR_JSON_DIR}")
-    print(f"Target: {POST_PROCESSED_DIR}")
+    print(f"Target: {STAGING_PENDING_DIR}\n")
 
     for subdir in TARGET_SUBDIRS:
         source_type_dir = os.path.join(GENERATOR_JSON_DIR, subdir)
-        target_type_dir = os.path.join(POST_PROCESSED_DIR, subdir)
+        target_type_dir = os.path.join(STAGING_PENDING_DIR, subdir)
         
         if not os.path.exists(source_type_dir):
             continue
@@ -148,7 +136,7 @@ def run_pipeline():
                     print(f"  -> Skip (already exists): {output_path}")
                     continue
                 
-                process_single_file(spark, input_path, output_path, target_type_dir)
+                process_single_file(spark, input_path, output_path, FINAL_FILE)
 
     spark.stop()
 
