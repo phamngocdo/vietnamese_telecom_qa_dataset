@@ -3,7 +3,7 @@ import json
 import time
 from google import genai
 from google.genai import types
-from base import LLMBase
+from src.llm.base import LLMBase
 
 class GeminiLLM(LLMBase):
     def __init__(self, model="gemini-2.0-flash", key=None, prompt_lang="vi",
