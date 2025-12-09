@@ -60,7 +60,14 @@ def process_single_chunk(chunk, generator, validator):
     return validated_quests
 
 
-def create_quest_from_file(file_path, output_file_path, generator, validator):
+def create_quest_from_file(file_path):
+    try:
+        rel_path = os.path.relpath(file_path, CLEANED_DIR)
+    except ValueError:
+        rel_path = os.path.basename(file_path)
+
+    output_rel_path = os.path.splitext(rel_path)[0] + ".json"
+    output_file_path = os.path.join(GENERATED_DIR, output_rel_path)
     file_name = os.path.basename(file_path)
     print(f"\nProcessing file: {file_name}")
     
@@ -104,7 +111,7 @@ def create_quest_from_file(file_path, output_file_path, generator, validator):
 
         if not chunks_to_process:
             print(f"  -> All chunks already processed. Skipping file.")
-            return 0
+            return (output_file_path, 0)
         
         print(f"  -> {len(chunks_to_process)}/{len(cleaned_chunks)} chunks remaining to process.")
 
@@ -135,14 +142,14 @@ def create_quest_from_file(file_path, output_file_path, generator, validator):
                 print(f"    -> No valid Questions found for this chunk.")
 
     except KeyboardInterrupt:
-        return quests_created_count 
+        return (output_file_path, quests_created_count)
     except Exception as e:
         print(f"CRITICAL ERROR processing file {file_name}: {e}")
     
-    return quests_created_count
+    return (output_file_path, quests_created_count)
 
 
-def create_quest_from_folder(generator, validator, input_dir=CLEANED_DIR, output_dir=GENERATED_DIR):
+def create_quest_from_folder(input_dir=CLEANED_DIR, output_dir=GENERATED_DIR):
     if not os.path.exists(input_dir):
         print(f"Error: Cleaned data directory not found: {input_dir}")
         return
@@ -160,13 +167,8 @@ def create_quest_from_folder(generator, validator, input_dir=CLEANED_DIR, output
                     continue
 
                 cleaned_file_path = os.path.join(root, file_name)
-                relative_path = os.path.relpath(root, input_dir)
-                output_dir_file = os.path.join(output_dir, relative_path)
-                output_file_path = os.path.join(output_dir_file, file_name)
                 
-                os.makedirs(output_dir_file, exist_ok=True)
-                
-                count = create_quest_from_file(cleaned_file_path, output_file_path, generator, validator)
+                _, count = create_quest_from_file(cleaned_file_path)
                 total_quest += count
                 
     except KeyboardInterrupt:
@@ -180,7 +182,7 @@ if __name__ == "__main__":
     try:
         print("========== Loading LLM Configuration ==========")        
         print("\n========== Starting Generation Pipeline ==========")
-        create_quest_from_folder(generator, validator, CLEANED_DIR, GENERATED_DIR)
+        create_quest_from_folder(CLEANED_DIR, GENERATED_DIR)
         print("\n========== Generation Pipeline Finished ==========")
         
     except Exception as e:

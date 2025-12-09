@@ -11,6 +11,6 @@ validator:
 
 prompt_lang: "vi"
 
-data_type: "qna"
+data_type: "mcq"
 
 time_delay_seconds: 15

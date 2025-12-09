@@ -1,6 +1,8 @@
 import zipfile
 import os
 import subprocess
+import json
+import shutil
 
 def extract_nested_zip(zip_path, extract_to):
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -30,3 +32,45 @@ def convert_doc_to_pdf(file_path, output_path):
             os.rename(converted_file, output_path)
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Failed to convert {file_path} to PDF: {e}")
+    
+def merge_json(path, dict):
+    if os.path.exists(path):
+        with open(path, 'r', encoding='utf-8') as f:
+            existing_data = json.load(f)
+        existing_data.update(dict)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(existing_data, f, indent=4)
+    else:
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(dict, f, indent=4)
+
+def create_folder(path):
+    try:
+        os.makedirs(path, exist_ok=False)
+        return True, "Created!"
+    except Exception as e:
+        return False, str(e)
+
+def delete_path(path):
+    try:
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
+        return True, "Deleted!"
+    except Exception as e:
+        return False, str(e)
+
+def save_uploaded_files(files, target):
+    if not os.path.exists(target):
+        os.makedirs(target)
+    cnt = 0
+    for f in files:
+        fp = os.path.join(target, f.name)
+        try:
+            with open(fp, "wb") as out:
+                out.write(f.getbuffer())
+            cnt += 1
+        except Exception:
+            pass
+    return cnt

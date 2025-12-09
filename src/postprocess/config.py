@@ -6,14 +6,13 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")
 with open(os.path.join(PROJECT_ROOT, "config/path.yaml"), "r", encoding="utf-8") as f:
     data_paths = yaml.safe_load(f)
 
-GENERATOR_DIR = data_paths["generated"]
-FINAL_FILE = data_paths["final"]
-STAGING_PENDING_DIR = data_paths["postprocessed"]["pending"]
-
 with open(os.path.join(PROJECT_ROOT, "config/parameters.yaml"), "r", encoding="utf-8") as f:
     parameters = yaml.safe_load(f)
 
 DATA_TYPE = parameters["data_type"]
+GENERATOR_DIR = os.path.join(data_paths["generated"], DATA_TYPE)
+STAGING_PENDING_DIR = os.path.join(data_paths["postprocessed"]["pending"], DATA_TYPE)
+FINAL_FILE = data_paths["final"] + f"{DATA_TYPE}.json"
 
 SPARK_MEMORY = "4g"
 SPARK_APP_NAME = "TelecomQA_Postprocessing"

@@ -79,7 +79,22 @@ def save_final_dataframe(df, output_file_path):
         print("  -> Error saving file.")
 
 
-def process_single_file(spark, input_file_path, output_file_path, master_file_path):
+def postprocess_file(input_file_path, spark=None):
+    if spark is None:
+        spark = init_spark_session()
+    
+    try:
+        rel_path = os.path.relpath(input_file_path, GENERATOR_DIR)
+    except ValueError:
+        rel_path = os.path.basename(input_file_path)
+
+    output_rel_path = os.path.splitext(rel_path)[0] + ".json"
+    output_file_path = os.path.join(STAGING_PENDING_DIR, output_rel_path)
+
+    if os.path.exists(output_file_path):
+        print(f"\nSkipping already processed file: {output_file_path}")
+        return
+
     file_name = os.path.basename(input_file_path)
     print(f"\nProcessing: {file_name}")
     
@@ -96,7 +111,7 @@ def process_single_file(spark, input_file_path, output_file_path, master_file_pa
     df_internal_dedup, count_internal = internal_deduplication(df_filtered)
     print(f"  -> After Internal Dedup: {count_internal} (Dropped {count_filtered - count_internal})")
 
-    df_final, count_final = global_deduplication(spark, df_internal_dedup, master_file_path)
+    df_final, count_final = global_deduplication(spark, df_internal_dedup, FINAL_FILE)
     if count_internal > count_final:
         print(f"  -> After Master Dedup: {count_final} (Dropped {count_internal - count_final} duplicates found in Master)")
     else:
@@ -106,33 +121,24 @@ def process_single_file(spark, input_file_path, output_file_path, master_file_pa
         save_final_dataframe(df_final, output_file_path)
     else:
         print("  -> Result empty after processing. Nothing to save.")
+    return output_file_path
 
 
 def run_pipeline():
     spark = init_spark_session()
     print(f"Source: {GENERATOR_DIR}")
     print(f"Target: {STAGING_PENDING_DIR}\n")
-
-    source_type_dir = os.path.join(GENERATOR_DIR, DATA_TYPE)
-    target_type_dir = os.path.join(STAGING_PENDING_DIR, DATA_TYPE)
         
     print(f"\n========== Processing Type: {DATA_TYPE.upper()} ==========")
     
-    for root, _, files in os.walk(source_type_dir):
+    for root, _, files in os.walk(GENERATOR_DIR):
         for file_name in files:
             if not file_name.endswith(".json"):
                 continue
             
             input_path = os.path.join(root, file_name)
-            rel_path = os.path.relpath(root, source_type_dir)
-            output_dir = os.path.join(target_type_dir, rel_path)
-            os.makedirs(output_dir, exist_ok=True)
-            output_path = os.path.join(output_dir, file_name)
-            if os.path.exists(output_path):
-                print(f"  -> Skip (already exists): {output_path}")
-                continue
             
-            process_single_file(spark, input_path, output_path, FINAL_FILE)
+            postprocess_file(input_path, spark)
 
     spark.stop()
 

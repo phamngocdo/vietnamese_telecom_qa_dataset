@@ -84,15 +84,19 @@ def format_table_to_string(table_data: List[List[str]], caption: str, surroundin
     return formatted
 
 
-def clean_and_chunk_data(parsed_json_path: str, output_path: str, source_config: Dict) -> int:
-    """
-    Hàm worker cho Airflow: Đọc JSON thô -> Làm sạch -> Chia khối -> Ghi ra file JSON sạch.
-    Trả về số lượng chunks đã tạo.
-    """
+def clean_and_chunk_data(parsed_json_path: str) -> int:
+    try:
+        rel_path = os.path.relpath(parsed_json_path, PARSED_JSON_DIR)
+    except ValueError:
+        rel_path = os.path.basename(parsed_json_path)
+
+    output_rel_path = os.path.splitext(rel_path)[0] + ".json"
+    output_path = os.path.join(CLEANED_JSON_DIR, output_rel_path)
     
+    ensure_dir_exists(os.path.dirname(output_path))
     if os.path.exists(output_path):
         print(f"  -> Skipped (Exists): {output_path}")
-        return 0 
+        return output_path
 
     try:
         with open(parsed_json_path, "r", encoding="utf-8") as f:
@@ -103,7 +107,7 @@ def clean_and_chunk_data(parsed_json_path: str, output_path: str, source_config:
 
     document_id = os.path.basename(parsed_json_path)
     all_chunks = []
-    origin = build_source_origin(parsed_json_path, source_config)
+    origin = build_source_origin(parsed_json_path, SOURCE_CONFIG)
 
     table_bboxes_by_page = {}
     for table in data.get("tables", []):
@@ -168,14 +172,14 @@ def clean_and_chunk_data(parsed_json_path: str, output_path: str, source_config:
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(all_chunks, f, ensure_ascii=False, indent=4)
             print(f"  -> Cleaned & Saved: {output_path} ({len(all_chunks)} chunks)")
-            return len(all_chunks)
+            return output_path
         except Exception as e:
             print(f"Error saving cleaned file {output_path}: {e}")
             return 0
     else:
         print(f"  -> Warning: No content extracted for {document_id}")
         return 0
-
+    
 
 def clean_all_parsed_documents():
     if not os.path.exists(PARSED_JSON_DIR):
@@ -188,11 +192,6 @@ def clean_all_parsed_documents():
                 continue
 
             parsed_path = os.path.join(root, file_name)
-            
-            rel_path = os.path.relpath(root, PARSED_JSON_DIR)
-            output_dir = os.path.join(CLEANED_JSON_DIR, rel_path)
-            cleaned_path = os.path.join(output_dir, file_name)
-
             print(f"Cleaning: {file_name}")
             
-            clean_and_chunk_data(parsed_path, cleaned_path, SOURCE_CONFIG)
+            clean_and_chunk_data(parsed_path)
