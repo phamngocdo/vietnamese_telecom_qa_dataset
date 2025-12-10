@@ -9,7 +9,8 @@ import shutil
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from utils.file_helpers import extract_nested_zip, convert_doc_to_pdf
-from src.crawls.config import RAW_DATA_PATH
+from utils.logger import *
+from config import RAW_DATA_PATH
 
 OUTPUT_DIR = os.path.join(RAW_DATA_PATH, "3gpp_spec")
 
@@ -112,7 +113,7 @@ class ThreeGPPFilesPipeline(FilesPipeline):
                                 convert_doc_to_pdf(doc_path, pdf_path)
                                 os.remove(doc_path)
                             except Exception as e:
-                                info.spider.logger.error(f"Failed to convert {doc_path} to PDF: {e}")
+                                log_error(f"Failed to convert {doc_path} to PDF: {e}")
 
         return item
     
@@ -122,9 +123,9 @@ class ThreeGPPFilesPipeline(FilesPipeline):
         if os.path.exists(zip_folder):
             try:
                 shutil.rmtree(zip_folder)
-                spider.logger.info(f"Deleted zip folder: {zip_folder}")
+                log_info(f"Deleted zip folder: {zip_folder}")
             except Exception as e:
-                spider.logger.error(f"Failed to delete zip folder: {e}")
+                log_error(f"Failed to delete zip folder: {e}")
 
 class ThreeGPPSpider(Spider):
     name = "threegpp"
@@ -163,7 +164,7 @@ class ThreeGPPSpider(Spider):
         series = response.url.split("/")[-2]
 
         file_links = response.xpath("//a[contains(@href, '.zip')]/@href").getall()
-        self.logger.info(f"Found {len(file_links)} zip files in {release}/{series}")
+        log_info(f"Found {len(file_links)} zip files in {release}/{series}")
 
         for file_link in file_links:
             file_name = os.path.basename(file_link).lower()
@@ -189,11 +190,12 @@ class ThreeGPPSpider(Spider):
             }
 
     def errback_log(self, failure):
-        self.logger.warning(f"Request failed: {failure.request.url} — {repr(failure.value)}")
+        log_warning(f"Request failed: {failure.request.url} — {repr(failure.value)}")
     
 if __name__ == "__main__":
     from scrapy.crawler import CrawlerProcess
 
     process = CrawlerProcess()
     process.crawl(ThreeGPPSpider)
+    log_info("Starting crawl data from 3GPP Standards")
     process.start()

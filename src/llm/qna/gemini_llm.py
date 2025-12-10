@@ -4,6 +4,7 @@ import time
 from google import genai
 from google.genai import types
 from src.llm.base import LLMBase
+from src.utils.logger import *
 
 class GeminiLLM(LLMBase):
     def __init__(self, model="gemini-2.0-flash", key=None, prompt_lang="vi",
@@ -19,11 +20,11 @@ class GeminiLLM(LLMBase):
         if self.key:
             try:
                 self.client = genai.Client(api_key=self.key)
-                print(f"Gemini client for {'validator' if self.is_validator else 'generator'} initialized.")
+                log_info(f"Gemini client for {'validator' if self.is_validator else 'generator'} initialized.")
             except Exception as e:
-                print(f"Failed to initialize Gemini client: {e}")
+                log_error(f"Failed to initialize Gemini client: {e}")
         else:
-            print("Missing GEMINI_API_KEY environment variable.")
+            log_warning("Missing GEMINI_API_KEY environment variable.")
 
 
     def safe_json_parse(self, text):
@@ -38,11 +39,11 @@ class GeminiLLM(LLMBase):
 
     def generate(self, context):
         if self.is_validator:
-            print("This instance is configured as a validator, not a generator.")
+            log_warning("This instance is configured as a validator, not a generator.")
             return []
 
         if not self.client:
-            print(f"Gemini client for {'validator' if self.is_validator else 'generator'} not initialized.")
+            log_warning(f"Gemini client for {'validator' if self.is_validator else 'generator'} not initialized.")
             return []
 
         prompt = self.prompt.replace("{context}", context)
@@ -65,20 +66,20 @@ class GeminiLLM(LLMBase):
 
                 qa_pairs = self.safe_json_parse(text)
                 if not all(isinstance(x, dict) and "question" in x and "answer" in x for x in qa_pairs):
-                    print("Invalid QA format.")
+                    log_info("Invalid QA format.")
                     return []
                 return qa_pairs
 
             except Exception as e:
                 err_msg = str(e)
-                print(f"Validation API error (attempt {attempt}/{self.max_tries}): {err_msg}")
+                log_warning(f"Validation API error (attempt {attempt}/{self.max_tries}): {err_msg}")
 
                 if attempt < self.max_tries:
-                    print(f"Waiting {self.time_sleep_if_rate_limit / 60} minutes before retry...")
+                    log_warning(f"Waiting {self.time_sleep_if_rate_limit / 60} minutes before retry...")
                     time.sleep(self.time_sleep_if_rate_limit)
                     continue
                 else:
-                    print("Max tries reached for generation.")
+                    log_warning("Max tries reached for generation.")
                     return None
 
         return None
@@ -86,11 +87,11 @@ class GeminiLLM(LLMBase):
 
     def validate(self, context, qna_list):
         if not self.is_validator:
-            print("This instance is configured as a generator, not a validator.")
+            log_warning("This instance is configured as a generator, not a validator.")
             return None
 
         if not self.client:
-            print("Gemini client not initialized.")
+            log_warning("Gemini client not initialized.")
             return None
 
         qna_counts = len(qna_list)
@@ -123,21 +124,21 @@ class GeminiLLM(LLMBase):
                     if isinstance(parsed_output, list):
                         return [bool(x) for x in parsed_output]
                     else:
-                        print(f"Unexpected output type: {type(parsed_output)} -> {parsed_output}")
+                        log_info(f"Unexpected output type: {type(parsed_output)} -> {parsed_output}")
                         return None
                 except json.JSONDecodeError:
-                    print(f"Failed to parse output: {text}")
+                    log_warning(f"Failed to parse output: {text}")
                     return None
 
             except Exception as e:
                 err_msg = str(e)
-                print(f"Validation API error (attempt {attempt}/{self.max_tries}): {err_msg}")
+                log_warning(f"Validation API error (attempt {attempt}/{self.max_tries}): {err_msg}")
 
                 if attempt < self.max_tries:
-                    print(f"Waiting {self.time_sleep_if_rate_limit / 60} minutes before retry...")
+                    log_warning(f"Waiting {self.time_sleep_if_rate_limit / 60} minutes before retry...")
                     time.sleep(self.time_sleep_if_rate_limit)
                     continue
                 else:
-                    print("Max tries reached for validation.")
+                    log_warning("Max tries reached for validation.")
                     return None
         return None

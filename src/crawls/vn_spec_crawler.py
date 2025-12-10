@@ -7,7 +7,8 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from utils.file_helpers import convert_doc_to_pdf
-from src.crawls.config import RAW_DATA_PATH
+from utils.logger import *
+from config import RAW_DATA_PATH
 
 OUTPUT_DIR = os.path.join(RAW_DATA_PATH, "vn_spec")
 
@@ -29,9 +30,9 @@ class VnSpecFilesPipeline(FilesPipeline):
                 try:
                     convert_doc_to_pdf(full_path, pdf_path)
                     os.remove(full_path)
-                    info.spider.logger.info(f"Converted {full_path} → {pdf_path}")
+                    log_info(f"Converted {full_path} → {pdf_path}")
                 except Exception as e:
-                    info.spider.logger.error(f"Failed to convert {full_path} to PDF: {e}")
+                    log_error(f"Failed to convert {full_path} to PDF: {e}")
 
         return item
 
@@ -73,7 +74,7 @@ class VnSpecSpider(Spider):
 
             if file_url and file_url.endswith((".doc", ".docx", ".pdf")):
                 absolute_url = response.urljoin(file_url)
-                self.logger.info(f"Found file: {absolute_url}")
+                log_info(f"Found file: {absolute_url}")
                 yield {
                     "title": title,
                     "file_urls": [absolute_url],
@@ -85,4 +86,5 @@ if __name__ == "__main__":
 
     process = CrawlerProcess()
     process.crawl(VnSpecSpider)
+    log_info("Starting crawl data from Vietnam National Engineering Standards")
     process.start()

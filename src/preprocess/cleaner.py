@@ -1,7 +1,7 @@
 import os
 import re
 import json
-from typing import List, Dict, Tuple, Optional
+from typing import List, Tuple
 
 from src.preprocess.config import (
     PARSED_JSON_DIR, CLEANED_JSON_DIR, 
@@ -9,6 +9,7 @@ from src.preprocess.config import (
     ensure_dir_exists
 )
 
+from src.utils.logger import *
 
 def clean_text_content(text: str) -> str:
     if not text: return ""
@@ -95,14 +96,14 @@ def clean_and_chunk_data(parsed_json_path: str) -> int:
     
     ensure_dir_exists(os.path.dirname(output_path))
     if os.path.exists(output_path):
-        print(f"  -> Skipped (Exists): {output_path}")
+        log_info(f"  -> Skipped (Exists): {output_path}")
         return output_path
 
     try:
         with open(parsed_json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
-        print(f"Error reading parsed file {parsed_json_path}: {e}")
+        log_error(f"Error reading parsed file {parsed_json_path}: {e}")
         return 0
 
     document_id = os.path.basename(parsed_json_path)
@@ -171,19 +172,19 @@ def clean_and_chunk_data(parsed_json_path: str) -> int:
             ensure_dir_exists(os.path.dirname(output_path))
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(all_chunks, f, ensure_ascii=False, indent=4)
-            print(f"  -> Cleaned & Saved: {output_path} ({len(all_chunks)} chunks)")
+            log_info(f"  -> Cleaned & Saved: {output_path} ({len(all_chunks)} chunks)")
             return output_path
         except Exception as e:
-            print(f"Error saving cleaned file {output_path}: {e}")
+            log_error(f"Error saving cleaned file {output_path}: {e}")
             return 0
     else:
-        print(f"  -> Warning: No content extracted for {document_id}")
+        log_warning(f"  -> Warning: No content extracted for {document_id}")
         return 0
     
 
 def clean_all_parsed_documents():
     if not os.path.exists(PARSED_JSON_DIR):
-        print(f"Parsed JSON directory not found: {PARSED_JSON_DIR}")
+        log_warning(f"Parsed JSON directory not found: {PARSED_JSON_DIR}")
         return
 
     for root, _, files in os.walk(PARSED_JSON_DIR):
@@ -192,6 +193,6 @@ def clean_all_parsed_documents():
                 continue
 
             parsed_path = os.path.join(root, file_name)
-            print(f"Cleaning: {file_name}")
+            log_info(f"Cleaning: {file_name}")
             
             clean_and_chunk_data(parsed_path)

@@ -4,6 +4,7 @@ import threading
 from ruamel.yaml import YAML
 
 from src.utils.file_helpers import create_folder, delete_path, save_uploaded_files
+from src.utils.logger import *
 
 def get_raw_dir():
     if "project_root" in st.session_state:
@@ -16,23 +17,23 @@ def start_pipeline(selected):
         from src.preprocess.pipeline import preprocess_file
         from src.llm.pipeline import create_quest_from_file
         from src.postprocess.pipeline import postprocess_file
-        print("========== START PIPELINE==========")
+        log_info("========== START PIPELINE==========")
         try:
             for file_path in selected:
-                print(f"--- Processing file: {file_path} ---")
-                print("--- Preprocessing ---")
+                log_info(f"--- Processing file: {file_path} ---")
+                log_info("--- Preprocessing ---")
                 preprocess_path = preprocess_file(file_path)
-                print("--- Preprocessing Complete ---\n")
-                print("--- Generatate Data ---")
+                log_info("--- Preprocessing Complete ---\n")
+                log_info("--- Generatate Data ---")
                 generate_path, _ = create_quest_from_file(preprocess_path)
-                print("--- Data Generation Complete ---\n")
-                print("--- Postprocessing ---")
+                log_info("--- Data Generation Complete ---\n")
+                log_info("--- Postprocessing ---")
                 postprocess_file(generate_path)
-                print("--- Postprocessing Complete ---\n")
+                log_info("--- Postprocessing Complete ---\n")
         except Exception as e:
-            print("Pipeline error:", e)
+            log_error("Pipeline error:", e)
         finally:
-            print("========== PIPELINE ENDED SUCCESSFULLY ==========")
+            log_info("========== PIPELINE ENDED SUCCESSFULLY ==========")
     finally:
         st.session_state["processing"] = False
 

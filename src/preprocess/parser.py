@@ -5,6 +5,7 @@ import pdfplumber
 from typing import Optional, Tuple
 
 from src.preprocess.config import RAW_DATA_DIR, PARSED_JSON_DIR, ensure_dir_exists
+from src.utils.logger import *
 
 def _clean_caption_text(text: str) -> str:
     if not text: return ""
@@ -61,7 +62,7 @@ def extract_tables(pdf_path: str):
                             "data": table_data 
                         })
     except Exception as e:
-        print(f"PDFPlumber table error: {e}")
+        log_error(f"PDFPlumber table error: {e}")
     return all_tables
 
 
@@ -77,10 +78,10 @@ def parse_single_pdf_combined(file_path: str) -> Optional[str]:
     ensure_dir_exists(os.path.dirname(output_path))
 
     if os.path.exists(output_path):
-        print(f"  -> Skipped (Exists): {output_rel_path}")
+        log_info(f"  -> Skipped (Exists): {output_rel_path}")
         return output_path
 
-    print(f"Parsing: {rel_path}")
+    log_info(f"Parsing: {rel_path}")
     
     doc_data = {
         "file_name": os.path.basename(file_path),
@@ -109,11 +110,11 @@ def parse_single_pdf_combined(file_path: str) -> Optional[str]:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(doc_data, f, ensure_ascii=False, indent=4)
             
-        print(f"  -> Saved: {output_rel_path}")
+        log_info(f"  -> Saved: {output_rel_path}")
         return output_path 
         
     except Exception as e:
-        print(f"Critical error parsing {file_path}: {e}")
+        log_error(f"Critical error parsing {file_path}: {e}")
         if os.path.exists(output_path):
             os.remove(output_path)
         return None
@@ -131,8 +132,8 @@ def get_all_pdf_files(root_dir: str):
 def parse_all_documents():
     ensure_dir_exists(PARSED_JSON_DIR)
     pdf_files = get_all_pdf_files(RAW_DATA_DIR)
-    print(f"Found {len(pdf_files)} PDF files to parse.\n")
+    log_info(f"Found {len(pdf_files)} PDF files to parse.\n")
 
     for index, file_path in enumerate(pdf_files):
-        print(f"[{index + 1}/{len(pdf_files)}] Processing...")
+        log_info(f"[{index + 1}/{len(pdf_files)}] Processing...")
         parse_single_pdf_combined(file_path)

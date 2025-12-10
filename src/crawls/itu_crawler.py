@@ -7,7 +7,8 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-from src.crawls.config import RAW_DATA_PATH
+from config import RAW_DATA_PATH
+from utils.logger import *
 
 OUTPUT_DIR = os.path.join(RAW_DATA_PATH, "itu_spec")
 
@@ -79,7 +80,7 @@ class ItuSpider(Spider):
         rec_links = response.xpath('//a[contains(@href,"T-REC")]/@href').getall()
         rec_links = [response.urljoin(link) for link in rec_links]
 
-        self.logger.info(f"Found {len(rec_links)} recommendation links on {response.url}")
+        log_info(f"Found {len(rec_links)} recommendation links on {response.url}")
 
         for link in rec_links:
             yield Request(
@@ -93,7 +94,7 @@ class ItuSpider(Spider):
         pdf_links = response.xpath('//a[contains(@href,"lang=e") and contains(., "PDF")]/@href').getall()
         pdf_links = [response.urljoin(link) for link in pdf_links]
 
-        self.logger.info(f"Found {len(pdf_links)} PDF-E files on {response.url}")
+        log_info(f"Found {len(pdf_links)} PDF-E files on {response.url}")
 
         series, number = None, None
         m = re.search(r"T-REC-([A-Z])\.(\d+)", response.url)
@@ -114,4 +115,5 @@ if __name__ == "__main__":
     from scrapy.crawler import CrawlerProcess
     process = CrawlerProcess()
     process.crawl(ItuSpider)
+    log_info("Starting crawl data from ITU Standards")
     process.start()

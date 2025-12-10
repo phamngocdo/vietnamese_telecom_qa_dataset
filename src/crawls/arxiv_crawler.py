@@ -3,7 +3,8 @@ import os
 import requests
 import time
 
-from src.crawls.config import RAW_DATA_PATH
+from utils.logger import *
+from config import RAW_DATA_PATH
 
 OUTPUT_DIR = os.path.join(RAW_DATA_PATH, "arxiv")
 
@@ -32,7 +33,7 @@ def crawlers():
             pdf_path = os.path.join(OUTPUT_DIR, f"{title}.pdf")
 
             if os.path.exists(pdf_path):
-                print(f"Skipped (already exists): {title}")
+                log_info(f"Skipped (already exists): {title}")
                 continue
 
             try:
@@ -44,15 +45,16 @@ def crawlers():
                         if chunk:
                             pdf_file.write(chunk)
 
-                print(f"Downloaded: {pdf_path}")
+                log_info(f"Downloaded: {pdf_path}")
                 time.sleep(1)
             except Exception as e:
-                print(f"Failed to download {pdf_url}: {e}")
+                log_error(f"Failed to download {pdf_url}: {e}")
 
     except arxiv.UnexpectedEmptyPageError as e:
-        print(f"Unexpected empty page: {e}")
+        log_warning(f"Unexpected empty page: {e}")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        log_error(f"An error occurred: {e}")
 
 if __name__ == "__main__":
+    log_info("Starting crawl paper from arxiv")
     crawlers()

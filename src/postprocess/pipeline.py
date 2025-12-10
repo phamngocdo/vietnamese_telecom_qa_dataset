@@ -12,7 +12,7 @@ from src.postprocess.spark_ops import (
     filter_invalid_questions, internal_deduplication, 
     add_normalization_columns
 )
-
+from src.utils.logger import *
 
 def finalize_single_json(spark_output_dir, target_file_path):
     json_files = glob.glob(os.path.join(spark_output_dir, "part-*.json"))
@@ -28,7 +28,7 @@ def finalize_single_json(spark_output_dir, target_file_path):
             with open(target_file_path, 'w', encoding='utf-8') as f_out:
                 f_out.write(json_content)
         except Exception as e:
-            print(f"Error converting to JSON Array: {e}")
+            log_error(f"Error converting to JSON Array: {e}")
             return False
         
         shutil.rmtree(spark_output_dir)
@@ -53,7 +53,7 @@ def global_deduplication(spark, df_local, master_file_path):
         )
         return df_final, df_final.count()
     except Exception as e:
-        print(f"  -> Global Dedup Warning: {e}. Proceeding with local dedup only.")
+        log_warning(f"  -> Global Dedup Warning: {e}. Proceeding with local dedup only.")
         return df_local, df_local.count()
     
 
@@ -74,9 +74,9 @@ def save_final_dataframe(df, output_file_path):
     df_final.coalesce(1).write.json(temp_dir)
     
     if finalize_single_json(temp_dir, output_file_path):
-        print(f"  -> Saved {df_final.count()} samples to: {output_file_path}")
+        log_info(f"  -> Saved {df_final.count()} samples to: {output_file_path}")
     else:
-        print("  -> Error saving file.")
+        log_error("  -> Error saving file.")
 
 
 def postprocess_file(input_file_path, spark=None):
@@ -92,44 +92,44 @@ def postprocess_file(input_file_path, spark=None):
     output_file_path = os.path.join(STAGING_PENDING_DIR, output_rel_path)
 
     if os.path.exists(output_file_path):
-        print(f"\nSkipping already processed file: {output_file_path}")
+        log_info(f"\nSkipping already processed file: {output_file_path}")
         return
 
     file_name = os.path.basename(input_file_path)
-    print(f"\nProcessing: {file_name}")
+    log_info(f"\nProcessing: {file_name}")
     
     df_merged, count_raw = read_and_merge_data(spark, input_file_path, output_file_path)
     if df_merged is None:
-        print(f"-> Error reading file {input_file_path}")
+        log_error(f"-> Error reading file {input_file_path}")
         return
 
-    print(f"  -> Raw Input Count: {count_raw}")
+    log_info(f"  -> Raw Input Count: {count_raw}")
 
     df_filtered, count_filtered = filter_invalid_questions(df_merged)
-    print(f"  -> After Filtering Invalid: {count_filtered} (Dropped {count_raw - count_filtered})")
+    log_info(f"  -> After Filtering Invalid: {count_filtered} (Dropped {count_raw - count_filtered})")
 
     df_internal_dedup, count_internal = internal_deduplication(df_filtered)
-    print(f"  -> After Internal Dedup: {count_internal} (Dropped {count_filtered - count_internal})")
+    log_info(f"  -> After Internal Dedup: {count_internal} (Dropped {count_filtered - count_internal})")
 
     df_final, count_final = global_deduplication(spark, df_internal_dedup, FINAL_FILE)
     if count_internal > count_final:
-        print(f"  -> After Master Dedup: {count_final} (Dropped {count_internal - count_final} duplicates found in Master)")
+        log_info(f"  -> After Master Dedup: {count_final} (Dropped {count_internal - count_final} duplicates found in Master)")
     else:
-        print(f"  -> Master Dedup: No duplicates found in Master.")
+        log_info(f"  -> Master Dedup: No duplicates found in Master.")
 
     if count_final > 0:
         save_final_dataframe(df_final, output_file_path)
     else:
-        print("  -> Result empty after processing. Nothing to save.")
+        log_info("  -> Result empty after processing. Nothing to save.")
     return output_file_path
 
 
 def run_pipeline():
     spark = init_spark_session()
-    print(f"Source: {GENERATOR_DIR}")
-    print(f"Target: {STAGING_PENDING_DIR}\n")
+    log_info(f"Source: {GENERATOR_DIR}")
+    log_info(f"Target: {STAGING_PENDING_DIR}\n")
         
-    print(f"\n========== Processing Type: {DATA_TYPE.upper()} ==========")
+    log_info(f"\n========== Processing Type: {DATA_TYPE.upper()} ==========")
     
     for root, _, files in os.walk(GENERATOR_DIR):
         for file_name in files:
@@ -144,6 +144,6 @@ def run_pipeline():
 
 
 if __name__ == "__main__":
-    print("========== POST-PROCESSING STARTED ==========")
+    log_info("========== POST-PROCESSING STARTED ==========")
     run_pipeline()
-    print("========== POST-PROCESSING FINISHED ==========")
+    log_info("========== POST-PROCESSING FINISHED ==========")
