@@ -4,7 +4,11 @@ import json
 import os
 import math
 import shutil
+import logging
 from st_aggrid import AgGrid, GridOptionsBuilder, DataReturnMode, GridUpdateMode
+
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 ROWS_PER_PAGE = 100
 
@@ -140,66 +144,6 @@ def show_merge_confirmation(pending_data, final_path, pending_file_full_path, pe
             st.rerun()
 
 def app(router_func=None):
-    col_header, col_pipeline_btn = st.columns([7, 1])
-    
-    with col_header:
-        st.title("Dataset Management")
-    
-    with col_pipeline_btn:
-        if st.session_state.get("pipeline_running", False):
-            if st.button("Processing Pipeline...", type="primary", use_container_width=True):
-                pass
-        else:
-            if st.button("Start Pipeline", type="primary", use_container_width=True):
-                if router_func:
-                    router_func("pipeline_setup")
-        with st.popover("Import Data", use_container_width=True):
-            uploaded = st.file_uploader(
-                "Choose JSON file",
-                type=["json"],
-                key="up_import"
-            )
-
-            data_type = st.radio(
-                "Data Type",
-                options=["MCQ", "QnA"],
-                horizontal=True,
-                key="import_data_type"
-            )
-
-            c_ic1, c_ic2 = st.columns([1, 1])
-
-            with c_ic2:
-                cancel = st.button("Cancel", use_container_width=True, key="btn_cancel_import")
-
-            with c_ic1:
-                confirm = st.button("Import", use_container_width=True, type="primary", key="btn_confirm_import")
-
-            if cancel:
-                st.toast("Canceled")
-                st.rerun()
-
-            if confirm:
-                if uploaded is None:
-                    st.error("Please upload a file")
-                else:
-                    type_folder = "mcq" if data_type == "MCQ" else "qna"
-
-                    pending_dir = st.session_state["path_config"]["postprocessed"]["pending"]
-                    if not os.path.isabs(pending_dir):
-                        pending_dir = os.path.join(st.session_state["project_root"], pending_dir)
-
-                    pending_dir = os.path.join(pending_dir, type_folder)
-                    os.makedirs(pending_dir, exist_ok=True)
-
-                    dest_path = os.path.join(pending_dir, uploaded.name)
-                    with open(dest_path, "wb") as f:
-                        f.write(uploaded.getbuffer())
-
-                    st.success(f"Imported → pending/{type_folder}")
-                    st.rerun()
-
-
     if "path_config" not in st.session_state:
         st.warning("Please run from app.py")
         return
@@ -212,6 +156,71 @@ def app(router_func=None):
     if not os.path.isabs(final_dir): final_dir = os.path.join(project_root, final_dir)
     if not os.path.isabs(pending_base): pending_base = os.path.join(project_root, pending_base)
     if not os.path.isabs(approved_base): approved_base = os.path.join(project_root, approved_base)
+
+    col_header, col_pipeline_btn = st.columns([6, 2])
+    
+    with col_header:
+        st.title("Dataset Management")
+    
+    with col_pipeline_btn:
+        if st.session_state.get("pipeline_running", False):
+            if st.button("Processing Pipeline...", type="primary", use_container_width=True):
+                pass
+        else:
+            if st.button("Start Pipeline", type="primary", use_container_width=True):
+                if router_func:
+                    router_func("pipeline_setup")
+        
+        c_imp, c_down = st.columns([1, 1])
+        with c_imp:
+            with st.popover("Import", use_container_width=True):
+                uploaded = st.file_uploader(
+                    "Choose JSON file",
+                    type=["json"],
+                    key="up_import"
+                )
+
+                data_type_imp = st.radio(
+                    "Data Type",
+                    options=["MCQ", "QnA"],
+                    horizontal=True,
+                    key="import_data_type"
+                )
+
+                if st.button("Import", use_container_width=True, type="primary", key="btn_confirm_import"):
+                    if uploaded is None:
+                        st.error("Please upload a file")
+                    else:
+                        type_folder = "mcq" if data_type_imp == "MCQ" else "qna"
+                        target_dir = os.path.join(pending_base, type_folder)
+                        os.makedirs(target_dir, exist_ok=True)
+
+                        dest_path = os.path.join(target_dir, uploaded.name)
+                        with open(dest_path, "wb") as f:
+                            f.write(uploaded.getbuffer())
+
+                        st.success(f"Imported → pending/{type_folder}")
+                        st.rerun()
+        
+        with c_down:
+            # Xác định file master hiện tại để tải về
+            is_mcq_curr = st.session_state.get("current_view_type", True) # Default MCQ
+            filename_curr = "mcq.json" if is_mcq_curr else "qna.json"
+            file_path_curr = os.path.join(final_dir, filename_curr)
+            
+            # Đọc file để tạo nút download
+            file_content = ""
+            if os.path.exists(file_path_curr):
+                with open(file_path_curr, "r", encoding="utf-8") as f:
+                    file_content = f.read()
+            
+            st.download_button(
+                label="Download",
+                data=file_content,
+                file_name=filename_curr,
+                mime="application/json",
+                use_container_width=True
+            )
 
     col_opt, col_mode, col_space = st.columns([2, 2, 4])
     

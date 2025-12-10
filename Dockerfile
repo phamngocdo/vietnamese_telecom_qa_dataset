@@ -17,4 +17,4 @@ COPY . .
 
 EXPOSE 8051
 
-CMD ["python", "src/ui/app.py"]
+CMD ["streamlit", "src/ui/app.py"]
