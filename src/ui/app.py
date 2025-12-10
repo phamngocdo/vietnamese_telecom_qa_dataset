@@ -7,7 +7,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")
 sys.path.append(PROJECT_ROOT)
 
 import streamlit as st
-from src.ui.pages import home
+from src.ui.pages import home, pipeline_setup
 
 with open(os.path.join(PROJECT_ROOT, "config/path.yaml"), "r", encoding="utf-8") as f:
     path_config = yaml.safe_load(f)
@@ -43,11 +43,8 @@ if __name__ == "__main__":
 
         if page == "home":
             home.app(navigate_to)
-            
-        else:
-            st.error("404 - Page not found")
-            if st.button("Về trang chủ"):
-                navigate_to("home")
+        if page == "pipeline_setup":
+            pipeline_setup.app(navigate_to)
     except Exception as e:
         print("Streamlit app error:", e)
         st.write("Đang chuyển hướng...")

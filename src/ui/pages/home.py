@@ -146,9 +146,16 @@ def app(router_func=None):
         st.title("Dataset Management")
     
     with col_pipeline_btn:
+        if st.session_state.get("pipeline_running", False):
+            if st.button("Processing Pipeline...", type="primary", use_container_width=True):
+                pass
+        else:
+            if st.button("Start Pipeline", type="primary", use_container_width=True):
+                if router_func:
+                    router_func("pipeline_setup")
         with st.popover("Import Data", use_container_width=True):
             uploaded = st.file_uploader(
-                "Choose JSON or PDF file",
+                "Choose JSON file",
                 type=["json"],
                 key="up_import"
             )
